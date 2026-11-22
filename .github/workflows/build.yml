@@ -16,6 +16,7 @@ permissions:
 
 env:
   GENERAL_FLAGS: "-DWITH_RSDK=OFF -DMANIA_USE_PLUS=ON -DCMAKE_BUILD_TYPE=Release"
+  V5_FLAGS: "-DRETRO_REVISION=2"
   V5U_FLAGS: "-DRETRO_REVISION=3"
   GENERAL_WIN_FLAGS: "-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
   WIN64_FLAGS: "-DVCPKG_TARGET_TRIPLET=x64-windows-static -A x64"
@@ -30,12 +31,19 @@ jobs:
           submodules: recursive
       - name: Build Mania
         run: |
+          cmake -B build_v5 ${{env.GENERAL_FLAGS}} ${{env.GENERAL_WIN_FLAGS}} ${{env.WIN64_FLAGS}} ${{env.V5_FLAGS}}
+          cmake --build build_v5 --parallel --config Release
           cmake -B build_v5U ${{env.GENERAL_FLAGS}} ${{env.GENERAL_WIN_FLAGS}} ${{env.WIN64_FLAGS}} ${{env.V5U_FLAGS}}
           cmake --build build_v5U --parallel --config Release
-      - name: Upload raw Game.dll to Releases
+          mkdir release_files
+          cp ./build_v5/Release/Game.dll ./release_files/Game.dll
+          cp ./build_v5U/Release/Game.dll ./release_files/Game_v5U.dll
+      - name: Upload raw DLLs to Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Latest Build
-          files: ./build_v5U/Release/Game.dll
-          overwrite: true
+          files: |
+            ./release_files/Game.dll
+            ./release_files/Game_v5U.dll
+          overwrite_files: true
